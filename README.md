@@ -24,16 +24,18 @@ cycle, and a sticky session that stays active until you explicitly end it.
 
 ## Install
 
-As a Claude Code plugin, from this repo:
+Install as a Claude Code plugin from this repo's GitHub marketplace:
 
 ```
-/plugin install /path/to/wingman
+/plugin marketplace add stevendejongnl/wingman
+/plugin install wingman@wingman
 ```
 
-Or point Claude Code at this GitHub repo's plugin marketplace entry, if
-you've registered one. The plugin registers two hooks (`SessionStart`,
-`UserPromptSubmit`) that make the pair session sticky, and a `pair` skill
-that drives the actual workflow.
+The plugin registers two hooks (`SessionStart`, `UserPromptSubmit`) that make
+the pair session sticky, and a `pair` skill that drives the actual workflow.
+
+For local development, install from a checkout path instead:
+`/plugin install /path/to/wingman`.
 
 ## Requirements
 
