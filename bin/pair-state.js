@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 'use strict';
-// wingman — CLI wrapper around src/lib/state.js, used by the pair skill's Bash steps.
+// wingman - CLI wrapper around src/lib/state.js, used by the pair skill's Bash steps.
 const state = require('../src/lib/state');
 
 const [, , cmd, cwd, jsonArg] = process.argv;

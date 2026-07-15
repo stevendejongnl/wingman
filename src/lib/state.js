@@ -42,7 +42,7 @@ function init(cwd, { task, timerSeconds, whoseTurn, watchCommand }) {
 function write(cwd, patch) {
   const current = read(cwd);
   if (!current) {
-    throw new Error('No pair session state found at ' + statePath(cwd) + ' — call init() first.');
+    throw new Error('No pair session state found at ' + statePath(cwd) + ' - call init() first.');
   }
   const next = Object.assign({}, current, patch);
   atomicWrite(statePath(cwd), next);

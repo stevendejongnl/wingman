@@ -2,22 +2,22 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the `wingman` Claude Code plugin — a sticky TDD ping-pong pairing partner with red/green/refactor discipline, alternating roles, watcher-driven turn detection, a nudge-only timer, advisory subagents, and 3 commits per cycle.
+**Goal:** Build the `wingman` Claude Code plugin - a sticky TDD ping-pong pairing partner with red/green/refactor discipline, alternating roles, watcher-driven turn detection, a nudge-only timer, advisory subagents, and 3 commits per cycle.
 
 **Architecture:** A small set of pure Node lib functions (state store, test-stack detection, reminder formatting) exercised through thin CLI wrappers and two Claude Code hooks (`SessionStart`, `UserPromptSubmit`) for session stickiness, plus a `pair` skill that carries the actual conversational orchestration (asking questions, launching the watcher, scheduling nudges, committing).
 
-**Tech Stack:** Node.js (CommonJS, `node:test` + `node:assert/strict` for tests — no test framework dependency), Claude Code plugin hooks, Claude Code skills.
+**Tech Stack:** Node.js (CommonJS, `node:test` + `node:assert/strict` for tests - no test framework dependency), Claude Code plugin hooks, Claude Code skills.
 
 ## Global Constraints
 
 - Node >=18, CommonJS modules (`"type": "commonjs"` in package.json).
-- Tests use only `node:test` / `node:assert/strict` — no jest/mocha/vitest dependency for this repo's own tests.
-- Session state file lives at `<project-cwd>/.claude/pair-session.json` — inside whatever project is being paired on, never inside the wingman plugin repo itself.
-- All hook scripts must silent-fail on any error (malformed stdin, missing state, etc.) — never throw in a way that blocks `SessionStart` or `UserPromptSubmit`.
-- Commit scheme: 3 commits per cycle — `test: cycle N red (author)`, `impl: cycle N green (author)`, `refactor: cycle N (author)`. The refactor commit is only created if refactor changes were actually made.
-- Timer is nudge-only — it must never force a role swap, auto-commit, or any other side effect beyond posting a reminder.
-- Ping-pong role derivation is proposed by Claude at the start of each cycle but always confirmed with the user before continuing — never silently assumed.
-- Consulting subagents (e.g. `Explore`, `cavecrew-investigator`, a reviewer agent) are advisory only during either person's turn — they never edit files, author commits, or advance turn state.
+- Tests use only `node:test` / `node:assert/strict` - no jest/mocha/vitest dependency for this repo's own tests.
+- Session state file lives at `<project-cwd>/.claude/pair-session.json` - inside whatever project is being paired on, never inside the wingman plugin repo itself.
+- All hook scripts must silent-fail on any error (malformed stdin, missing state, etc.) - never throw in a way that blocks `SessionStart` or `UserPromptSubmit`.
+- Commit scheme: 3 commits per cycle - `test: cycle N red (author)`, `impl: cycle N green (author)`, `refactor: cycle N (author)`. The refactor commit is only created if refactor changes were actually made.
+- Timer is nudge-only - it must never force a role swap, auto-commit, or any other side effect beyond posting a reminder.
+- Ping-pong role derivation is proposed by Claude at the start of each cycle but always confirmed with the user before continuing - never silently assumed.
+- Consulting subagents (e.g. `Explore`, `cavecrew-investigator`, a reviewer agent) are advisory only during either person's turn - they never edit files, author commits, or advance turn state.
 - This repo (`~/workspace/personal/apps/wingman`) is a new standalone git repo, to be pushed to a **private** GitHub repository.
 
 ---
@@ -30,10 +30,10 @@
 - Create: `.gitignore`
 
 **Interfaces:**
-- Produces: the plugin manifest referencing `${CLAUDE_PLUGIN_ROOT}/src/hooks/session-start.js` and `${CLAUDE_PLUGIN_ROOT}/src/hooks/prompt-submit.js` — later tasks must create files at exactly those paths.
+- Produces: the plugin manifest referencing `${CLAUDE_PLUGIN_ROOT}/src/hooks/session-start.js` and `${CLAUDE_PLUGIN_ROOT}/src/hooks/prompt-submit.js` - later tasks must create files at exactly those paths.
 - Produces: `npm test` script that later tasks' tests must satisfy.
 
-This is pure scaffolding — no logic to test.
+This is pure scaffolding - no logic to test.
 
 - [ ] **Step 1: Create `package.json`**
 
@@ -58,7 +58,7 @@ This is pure scaffolding — no logic to test.
 ```json
 {
   "name": "wingman",
-  "description": "TDD ping-pong pairing partner — sticky pair-programming sessions with red/green/refactor discipline.",
+  "description": "TDD ping-pong pairing partner - sticky pair-programming sessions with red/green/refactor discipline.",
   "hooks": {
     "SessionStart": [
       {
@@ -118,7 +118,7 @@ git commit -m "chore: scaffold wingman plugin"
   - `state.init(cwd, { task, timerSeconds, whoseTurn, watchCommand }) => object`
   - `state.write(cwd, patch) => object` (throws `Error` containing `"No pair session state found"` if `init` was never called)
   - `state.stop(cwd) => object`
-  - CLI: `node bin/pair-state.js <read|init|write|stop> <cwd> [json]` — prints the resulting state (or `null` for `read` on a missing file) as JSON on stdout; on error, prints the message to stderr and exits 1.
+  - CLI: `node bin/pair-state.js <read|init|write|stop> <cwd> [json]` - prints the resulting state (or `null` for `read` on a missing file) as JSON on stdout; on error, prints the message to stderr and exits 1.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -216,7 +216,7 @@ test('CLI init/read/write/stop round-trip', () => {
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run: `node --test test/state.test.js`
-Expected: FAIL — `Cannot find module '../src/lib/state'` (and `bin/pair-state.js` missing).
+Expected: FAIL - `Cannot find module '../src/lib/state'` (and `bin/pair-state.js` missing).
 
 - [ ] **Step 3: Write `src/lib/state.js`**
 
@@ -265,7 +265,7 @@ function init(cwd, { task, timerSeconds, whoseTurn, watchCommand }) {
 function write(cwd, patch) {
   const current = read(cwd);
   if (!current) {
-    throw new Error('No pair session state found at ' + statePath(cwd) + ' — call init() first.');
+    throw new Error('No pair session state found at ' + statePath(cwd) + ' - call init() first.');
   }
   const next = Object.assign({}, current, patch);
   atomicWrite(statePath(cwd), next);
@@ -284,7 +284,7 @@ module.exports = { statePath, read, init, write, stop };
 ```js
 #!/usr/bin/env node
 'use strict';
-// wingman — CLI wrapper around src/lib/state.js, used by the pair skill's Bash steps.
+// wingman - CLI wrapper around src/lib/state.js, used by the pair skill's Bash steps.
 const state = require('../src/lib/state');
 
 const [, , cmd, cwd, jsonArg] = process.argv;
@@ -343,7 +343,7 @@ git commit -m "feat: add pair session state store + CLI"
 - Consumes: nothing from earlier tasks.
 - Produces (used by Task 7):
   - `detect(cwd) => { stack: 'node'|'rust'|'python'|'unknown', testCmd: string|null, watchCmd: string|null }`
-  - CLI: `node bin/pair-detect.js <cwd>` — prints the detection result as JSON on stdout.
+  - CLI: `node bin/pair-detect.js <cwd>` - prints the detection result as JSON on stdout.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -429,7 +429,7 @@ test('CLI prints detection result as JSON', () => {
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run: `node --test test/detect-test-command.test.js`
-Expected: FAIL — `Cannot find module '../src/lib/detect-test-command'`
+Expected: FAIL - `Cannot find module '../src/lib/detect-test-command'`
 
 - [ ] **Step 3: Write `src/lib/detect-test-command.js`**
 
@@ -507,7 +507,7 @@ git commit -m "feat: add test-stack detection library + CLI"
 
 **Interfaces:**
 - Consumes: state objects shaped like Task 2's `state.init`/`state.read` output (`active`, `task`, `cycle`, `phase`, `whose_turn`).
-- Produces (used by Tasks 5, 6): `formatReminder(state) => string` — `''` when `state` is `null` or `state.active` is falsy.
+- Produces (used by Tasks 5, 6): `formatReminder(state) => string` - `''` when `state` is `null` or `state.active` is falsy.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -546,7 +546,7 @@ test('includes task, cycle, phase and whose_turn for an active state', () => {
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run: `node --test test/format-reminder.test.js`
-Expected: FAIL — `Cannot find module '../src/lib/format-reminder'`
+Expected: FAIL - `Cannot find module '../src/lib/format-reminder'`
 
 - [ ] **Step 3: Write `src/lib/format-reminder.js`**
 
@@ -555,11 +555,11 @@ Expected: FAIL — `Cannot find module '../src/lib/format-reminder'`
 
 function formatReminder(state) {
   if (!state || !state.active) return '';
-  return 'WINGMAN PAIR SESSION ACTIVE — task: ' + state.task +
+  return 'WINGMAN PAIR SESSION ACTIVE - task: ' + state.task +
     ' | cycle ' + state.cycle +
     ' | phase ' + state.phase +
     ' | ' + state.whose_turn + '\'s turn. ' +
-    'Only /pair stop or a new Claude Code session ends this — free discussion ' +
+    'Only /pair stop or a new Claude Code session ends this - free discussion ' +
     'in between or after cycles is fine, just don\'t silently drop the pairing structure.';
 }
 
@@ -642,7 +642,7 @@ test('prints nothing and does not throw on empty stdin', () => {
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run: `node --test test/session-start-hook.test.js`
-Expected: FAIL — `session-start.js` does not exist.
+Expected: FAIL - `session-start.js` does not exist.
 
 - [ ] **Step 3: Write `src/hooks/session-start.js`**
 
@@ -665,7 +665,7 @@ process.stdin.on('end', () => {
     const message = formatReminder(state);
     if (message) process.stdout.write(message);
   } catch (e) {
-    // silent fail — never block session start
+    // silent fail - never block session start
   }
 });
 ```
@@ -747,7 +747,7 @@ test('silently fails on malformed stdin', () => {
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run: `node --test test/prompt-submit-hook.test.js`
-Expected: FAIL — `prompt-submit.js` does not exist.
+Expected: FAIL - `prompt-submit.js` does not exist.
 
 - [ ] **Step 3: Write `src/hooks/prompt-submit.js`**
 
@@ -800,7 +800,7 @@ git commit -m "feat: add wingman UserPromptSubmit hook"
 
 **Interfaces:**
 - Consumes: `bin/pair-state.js` (Task 2) and `bin/pair-detect.js` (Task 3) as CLI tools invoked via `Bash`, using `${CLAUDE_PLUGIN_ROOT}` to locate them.
-- Produces: the `/pair` entry point end users invoke. No automated tests — this is a prompt document, verified by the manual dry run in Task 8.
+- Produces: the `/pair` entry point end users invoke. No automated tests - this is a prompt document, verified by the manual dry run in Task 8.
 
 Run the full test suite once before starting, to confirm nothing upstream is broken:
 
@@ -814,7 +814,7 @@ Expected: PASS (all tests from Tasks 2–6)
 ```markdown
 ---
 name: pair
-description: Start, run, and manage a TDD ping-pong pairing session with Claude — strict red/green/refactor discipline, alternating test/impl roles, sticky until /pair stop. Use when the user says "/pair", "let's pair on X", "start a pairing session", or similar.
+description: Start, run, and manage a TDD ping-pong pairing session with Claude - strict red/green/refactor discipline, alternating test/impl roles, sticky until /pair stop. Use when the user says "/pair", "let's pair on X", "start a pairing session", or similar.
 allowed-tools: Bash, Monitor, ScheduleWakeup, AskUserQuestion, Read, Edit, Write, Grep, Glob
 ---
 
@@ -827,13 +827,13 @@ change lands as its own commit.
 
 All state lives at `.claude/pair-session.json` in the *current project*
 (not the wingman plugin repo). Read/write it only through the CLI wrappers
-below — never hand-edit the JSON — so writes stay atomic and consistent:
+below - never hand-edit the JSON - so writes stay atomic and consistent:
 
 - `node "$CLAUDE_PLUGIN_ROOT/bin/pair-state.js" read <cwd>`
 - `node "$CLAUDE_PLUGIN_ROOT/bin/pair-state.js" init <cwd> '<json>'`
 - `node "$CLAUDE_PLUGIN_ROOT/bin/pair-state.js" write <cwd> '<json patch>'`
 - `node "$CLAUDE_PLUGIN_ROOT/bin/pair-state.js" stop <cwd>`
-- `node "$CLAUDE_PLUGIN_ROOT/bin/pair-detect.js" <cwd>` — detect test/watch command
+- `node "$CLAUDE_PLUGIN_ROOT/bin/pair-detect.js" <cwd>` - detect test/watch command
 
 ## `/pair start <task description>`
 
@@ -841,7 +841,7 @@ below — never hand-edit the JSON — so writes stay atomic and consistent:
    tell the user no watch-mode tool was found for this stack and ask how
    they want turn-completion detected instead of guessing.
 2. Ask (one question): default turn timer length in minutes (a nudge only,
-   never forced), and who writes cycle 1's test — the user or Claude.
+   never forced), and who writes cycle 1's test - the user or Claude.
 3. Launch the watch command in the background with `Bash`
    (`run_in_background: true`).
 4. Call `pair-state.js init` with `{task, timerSeconds, whoseTurn, watchCommand}`.
@@ -853,18 +853,18 @@ below — never hand-edit the JSON — so writes stay atomic and consistent:
 Each cycle has three phases. At the *start* of each cycle, state the derived
 ping-pong assignment (whoever just implemented writes the next test; their
 partner implements it) and ask the user to confirm or override before
-continuing — never assume silently.
+continuing - never assume silently.
 
 **Red phase** (`phase: "red"`):
 - If it's Claude's turn to write the test: write a small failing test,
   run it once to confirm it fails, then continue to the next step.
 - If it's the user's turn: attach `Monitor` to the background watcher.
-  Wait — do not poll or nag — until the watcher output shows a new failing
+  Wait - do not poll or nag - until the watcher output shows a new failing
   test. That is the signal the turn is done.
 - Once red is confirmed, commit: `git commit -m "test: cycle N red (author)"`
   where `author` is whoever just wrote it.
 - Call `pair-state.js write` with `{"phase": "green", "whose_turn": "<other
-  person>"}` — implementation duty passes to the partner in ping-pong TDD.
+  person>"}` - implementation duty passes to the partner in ping-pong TDD.
 - If it's now the user's turn, call `ScheduleWakeup` for the configured
   timer. If it fires before green is seen, post a single nudge ("still
   going? just checking in") and re-arm once; never force anything.
@@ -888,9 +888,9 @@ continuing — never assume silently.
 
 During either person's turn, you may spawn read-only helper agents
 (`Explore`, `cavecrew-investigator`, or a reviewer-style agent) for
-suggestions or navigation — think of them as a colleague chiming in, not a
+suggestions or navigation - think of them as a colleague chiming in, not a
 second driver. They must never edit files, commit, or call
-`pair-state.js write` — advisory output only, folded back into the
+`pair-state.js write` - advisory output only, folded back into the
 conversation.
 
 ## Failure handling
@@ -901,18 +901,18 @@ conversation.
 - **Watcher process dies mid-session**: `Monitor` will show the process
   ending/erroring. Report this to the user and ask whether to restart the
   watcher or fall back to the user saying "done" for the rest of the
-  session — don't restart silently.
+  session - don't restart silently.
 - **Ambiguous red/green signal** (watcher output doesn't clearly show a
   single, unambiguous transition): ask which test/result it refers to
   rather than guessing.
 - **Before any commit**: run `git status`/`git diff` first. If there are
   changes beyond what this phase's turn produced, surface them and ask
-  before staging — never bundle unexpected changes into a phase commit.
+  before staging - never bundle unexpected changes into a phase commit.
 
 ## Discussion
 
 Free-form discussion is always allowed, in between or after any cycle. It
-does not pause or end the session — only `/pair stop` or a new Claude Code
+does not pause or end the session - only `/pair stop` or a new Claude Code
 session does that. If the conversation drifts, the `UserPromptSubmit` hook
 reminder keeps the active cycle/phase/turn visible so you don't lose track.
 
@@ -930,7 +930,7 @@ new assignment out loud.
 ## `/pair stop`
 
 Run `pair-state.js stop <cwd>`, kill the background watcher process, and
-confirm the session has ended. This is the only in-conversation way out —
+confirm the session has ended. This is the only in-conversation way out -
 do not treat any other phrase as ending the session.
 ```
 
@@ -947,7 +947,7 @@ git commit -m "feat: add /pair skill for session orchestration"
 
 **Files:** none (verification + publishing only)
 
-**Interfaces:** none — this task consumes the whole plugin as built by Tasks 1–7.
+**Interfaces:** none - this task consumes the whole plugin as built by Tasks 1–7.
 
 - [ ] **Step 1: Run the full test suite once more**
 
