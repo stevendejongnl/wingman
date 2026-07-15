@@ -1,0 +1,19 @@
+{
+  "name": "wingman",
+  "owner": {
+    "name": "Steven de Jong"
+  },
+  "metadata": {
+    "description": "TDD ping-pong pairing partner - sticky pair-programming sessions with red/green/refactor discipline",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "wingman",
+      "source": "./",
+      "description": "TDD ping-pong pairing partner - sticky pair-programming sessions with red/green/refactor discipline.",
+      "category": "productivity",
+      "tags": ["tdd", "pairing", "testing", "workflow"]
+    }
+  ]
+}
