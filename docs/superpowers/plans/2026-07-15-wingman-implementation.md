@@ -807,7 +807,7 @@ Run the full test suite once before starting, to confirm nothing upstream is bro
 - [ ] **Step 1: Run full suite**
 
 Run: `npm test`
-Expected: PASS (all tests from Tasks 2–6)
+Expected: PASS (all tests from Tasks 2-6)
 
 - [ ] **Step 2: Write `skills/pair/SKILL.md`**
 
@@ -947,12 +947,12 @@ git commit -m "feat: add /pair skill for session orchestration"
 
 **Files:** none (verification + publishing only)
 
-**Interfaces:** none - this task consumes the whole plugin as built by Tasks 1–7.
+**Interfaces:** none - this task consumes the whole plugin as built by Tasks 1-7.
 
 - [ ] **Step 1: Run the full test suite once more**
 
 Run: `npm test`
-Expected: PASS (all tests from Tasks 2–6)
+Expected: PASS (all tests from Tasks 2-6)
 
 - [ ] **Step 2: Manual dry run**
 
