@@ -23,9 +23,20 @@ function atomicWrite(p, data) {
   fs.renameSync(tmp, p);
 }
 
+function markPending(cwd) {
+  const s = {
+    active: false,
+    pending: true,
+    invoked_at: new Date().toISOString()
+  };
+  atomicWrite(statePath(cwd), s);
+  return s;
+}
+
 function init(cwd, { task, timerSeconds, whoseTurn, watchCommand }) {
   const s = {
     active: true,
+    pending: false,
     task,
     cycle: 1,
     phase: 'red',
@@ -50,7 +61,17 @@ function write(cwd, patch) {
 }
 
 function stop(cwd) {
-  return write(cwd, { active: false });
+  return write(cwd, { active: false, pending: false });
 }
 
-module.exports = { statePath, read, init, write, stop };
+function cancel(cwd) {
+  const current = read(cwd);
+  if (current && current.active) {
+    throw new Error('Cannot cancel: a pair session is active. Use stop instead.');
+  }
+  const p = statePath(cwd);
+  if (fs.existsSync(p)) fs.unlinkSync(p);
+  return null;
+}
+
+module.exports = { statePath, read, markPending, init, write, stop, cancel };

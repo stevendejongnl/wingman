@@ -11,6 +11,18 @@ test('returns empty string for inactive state', () => {
   assert.equal(formatReminder({ active: false }), '');
 });
 
+test('nudges to start or cancel when a pair intent is pending', () => {
+  const msg = formatReminder({ active: false, pending: true });
+  assert.match(msg, /\/pair start/);
+  assert.match(msg, /\/pair cancel/);
+  assert.match(msg, /pending/i);
+});
+
+test('active reminder forbids solo work outside the turn structure', () => {
+  const msg = formatReminder({ active: true, task: 't', cycle: 1, phase: 'red', whose_turn: 'user' });
+  assert.match(msg, /do not|don't/i);
+});
+
 test('includes task, cycle, phase and whose_turn for an active state', () => {
   const msg = formatReminder({
     active: true,

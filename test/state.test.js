@@ -67,6 +67,58 @@ test('stop sets active to false and preserves history', () => {
   assert.equal(stopped.history.length, 1);
 });
 
+test('markPending writes a pending intent that read returns', () => {
+  const cwd = tmpDir();
+  const s = state.markPending(cwd);
+  assert.equal(s.active, false);
+  assert.equal(s.pending, true);
+  assert.deepEqual(state.read(cwd), s);
+});
+
+test('init clears a prior pending intent', () => {
+  const cwd = tmpDir();
+  state.markPending(cwd);
+  const s = state.init(cwd, {
+    task: 'add login', timerSeconds: 60, whoseTurn: 'user', watchCommand: 'npm test'
+  });
+  assert.equal(s.active, true);
+  assert.equal(s.pending, false);
+});
+
+test('stop clears both active and pending', () => {
+  const cwd = tmpDir();
+  state.init(cwd, {
+    task: 'add login', timerSeconds: 60, whoseTurn: 'user', watchCommand: 'npm test'
+  });
+  const stopped = state.stop(cwd);
+  assert.equal(stopped.active, false);
+  assert.equal(stopped.pending, false);
+});
+
+test('cancel removes a pending intent (read returns null)', () => {
+  const cwd = tmpDir();
+  state.markPending(cwd);
+  state.cancel(cwd);
+  assert.equal(state.read(cwd), null);
+});
+
+test('cancel throws when a session is active', () => {
+  const cwd = tmpDir();
+  state.init(cwd, {
+    task: 'add login', timerSeconds: 60, whoseTurn: 'user', watchCommand: 'npm test'
+  });
+  assert.throws(() => state.cancel(cwd), /active/);
+});
+
+test('CLI pending/cancel round-trip', () => {
+  const cwd = tmpDir();
+  const pendOut = execFileSync(process.execPath, [CLI, 'pending', cwd], { encoding: 'utf8' });
+  assert.equal(JSON.parse(pendOut).pending, true);
+  execFileSync(process.execPath, [CLI, 'cancel', cwd], { encoding: 'utf8' });
+  const readOut = execFileSync(process.execPath, [CLI, 'read', cwd], { encoding: 'utf8' });
+  assert.equal(readOut.trim(), 'null');
+});
+
 test('CLI init/read/write/stop round-trip', () => {
   const cwd = tmpDir();
   const initOut = execFileSync(process.execPath, [CLI, 'init', cwd, JSON.stringify({
