@@ -60,6 +60,13 @@ test('detects python from Makefile', () => {
   assert.deepEqual(result, { stack: 'python', testCmd: 'make test', watchCmd: 'ptw' });
 });
 
+test('does not throw when package.json parses to a non-object primitive', () => {
+  const cwd = tmpDir();
+  fs.writeFileSync(path.join(cwd, 'package.json'), 'null');
+  const result = detect(cwd);
+  assert.deepEqual(result, { stack: 'node', testCmd: null, watchCmd: null });
+});
+
 test('returns unknown stack for an empty directory', () => {
   const cwd = tmpDir();
   const result = detect(cwd);

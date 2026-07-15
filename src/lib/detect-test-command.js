@@ -11,6 +11,9 @@ function detect(cwd) {
     } catch (e) {
       pkg = {};
     }
+    if (!pkg || typeof pkg !== 'object') {
+      pkg = {};
+    }
     const deps = Object.assign({}, pkg.dependencies, pkg.devDependencies);
     const testCmd = pkg.scripts && pkg.scripts.test ? 'npm test' : null;
     let watchCmd = null;

@@ -85,9 +85,9 @@ state, not shared history):
 
 ### 4. Turn engine
 
-- Ping-pong derivation: whoever wrote cycle N's test implements cycle N and
-  writes cycle N+1's test; the other person implements cycle N+1's test and
-  writes cycle N+2's - i.e., roles swap every cycle.
+- Ping-pong derivation: whoever wrote cycle N's test hands implementation of
+  cycle N to their partner; that partner then writes cycle N+1's test, which
+  the first person implements - i.e., roles swap every cycle.
 - At the start of each cycle, Claude states the derived next assignment and
   asks for confirmation rather than silently assuming (per your preference)
   - a one-line yes/override check, not a full requirements dialogue.
