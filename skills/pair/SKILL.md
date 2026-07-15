@@ -11,15 +11,50 @@ cycle, a background test watcher detects when a human turn is done, an
 optional timer nudges if a turn runs long, and every phase that produces a
 change lands as its own commit.
 
+## The one rule (read first)
+
+The moment `/pair` is invoked you are in a pairing context, and the whole
+point of this skill is that you do **not** silently go build things solo.
+
+- Do NOT write or edit code, run mutating commands, or commit **until a
+  session is actually started** (`/pair start`) or the user explicitly
+  declines pairing (`/pair cancel`).
+- If the user invokes `/pair` and then, in the same or next message,
+  describes a task ("continue with X", "let's fix Y"), that task is what to
+  **start the session ON** - it is NOT permission to implement it directly.
+  Run `/pair start <that task>`.
+- Another skill or command running in between (e.g. `/handoff`) does not
+  cancel this. Reading a handoff is fine; acting on it solo is not.
+
+A `PreToolUse` hook enforces this: while an intent is pending or it is the
+human's turn, edits and commits are blocked. If a tool call is denied with a
+wingman message, that is the guard - follow it, do not try to route around
+it.
+
 All state lives at `.claude/pair-session.json` in the *current project*
 (not the wingman plugin repo). Read/write it only through the CLI wrappers
 below - never hand-edit the JSON - so writes stay atomic and consistent:
 
 - `node "$CLAUDE_PLUGIN_ROOT/bin/pair-state.js" read <cwd>`
-- `node "$CLAUDE_PLUGIN_ROOT/bin/pair-state.js" init <cwd> '<json>'`
+- `node "$CLAUDE_PLUGIN_ROOT/bin/pair-state.js" pending <cwd>` - record a not-yet-started intent
+- `node "$CLAUDE_PLUGIN_ROOT/bin/pair-state.js" init <cwd> '<json>'` - start a session (clears pending)
 - `node "$CLAUDE_PLUGIN_ROOT/bin/pair-state.js" write <cwd> '<json patch>'`
 - `node "$CLAUDE_PLUGIN_ROOT/bin/pair-state.js" stop <cwd>`
+- `node "$CLAUDE_PLUGIN_ROOT/bin/pair-state.js" cancel <cwd>` - drop a pending intent (only when not active)
 - `node "$CLAUDE_PLUGIN_ROOT/bin/pair-detect.js" <cwd>` - detect test/watch command
+
+## `/pair` (no subcommand)
+
+The user wants to pair but hasn't scoped a task yet.
+
+1. Run `pair-state.js pending <cwd>` to record the intent. From now the
+   guard blocks solo edits/commits until you start or cancel.
+2. Ask what to pair on (one short question). When the user answers with a
+   task - even via another command like `/handoff` - treat it as the
+   argument to `/pair start` and go to that section. Do not implement it
+   yourself.
+3. If the user says they don't want to pair after all, run
+   `pair-state.js cancel <cwd>` and continue normally.
 
 ## `/pair start <task description>`
 
@@ -149,3 +184,10 @@ step 3), then call `TaskStop` with that task ID to actually terminate the
 background watcher. Then run `pair-state.js stop <cwd>` and confirm the
 session has ended. This is the only in-conversation way out - do not treat
 any other phrase as ending the session.
+
+## `/pair cancel`
+
+Drop a *pending* intent (from a bare `/pair`) without ever starting a
+session: run `pair-state.js cancel <cwd>` and confirm normal (non-paired)
+work can resume. If a session is already active, `cancel` refuses - use
+`/pair stop` instead.
