@@ -1,7 +1,7 @@
 ---
 name: pair
 description: Start, run, and manage a TDD ping-pong pairing session with Claude - strict red/green/refactor discipline, alternating test/impl roles, sticky until /pair stop. Use when the user says "/pair", "let's pair on X", "start a pairing session", or similar.
-allowed-tools: Bash, Monitor, ScheduleWakeup, AskUserQuestion, Read, Edit, Write, Grep, Glob
+allowed-tools: Bash, Monitor, ScheduleWakeup, AskUserQuestion, Read, Edit, Write, Grep, Glob, Agent, TaskStop
 ---
 
 # Pair (wingman)
@@ -28,9 +28,16 @@ below - never hand-edit the JSON - so writes stay atomic and consistent:
    they want turn-completion detected instead of guessing.
 2. Ask (one question): default turn timer length in minutes (a nudge only,
    never forced), and who writes cycle 1's test - the user or Claude.
+   Multiply the user's answer (in minutes) by 60 to get seconds - this is
+   the `timerSeconds` value used below; never pass the raw minutes value.
 3. Launch the watch command in the background with `Bash`
-   (`run_in_background: true`).
-4. Call `pair-state.js init` with `{task, timerSeconds, whoseTurn, watchCommand}`.
+   (`run_in_background: true`). The Bash tool call returns a task ID for
+   this background process - capture it, you'll need it in `/pair stop`.
+4. Call `pair-state.js init` with `{task, timerSeconds, whoseTurn, watchCommand}`,
+   where `timerSeconds` is the minutes-times-60 value from step 2. Then, in
+   a separate `pair-state.js write` call, persist the detected `testCmd`
+   (from step 1) and the background task ID (from step 3):
+   `pair-state.js write <cwd> '{"test_cmd": "<testCmd>", "watch_task_id": "<id>"}'`.
 5. Announce the session is active, state the cycle 1 assignment, and proceed
    to the cycle loop below.
 
@@ -41,33 +48,55 @@ ping-pong assignment (whoever just implemented writes the next test; their
 partner implements it) and ask the user to confirm or override before
 continuing - never assume silently.
 
+After every commit in any phase below, update `history` using a
+read-modify-write pattern - `write()` does a shallow patch, so passing
+`{"history": [...]}` replaces the whole array rather than appending. Never
+batch this at cycle end:
+
+1. Run `git rev-parse HEAD` to get the commit SHA that was just created.
+2. Run `pair-state.js read <cwd>` to get the current state, including its
+   `history` array.
+3. Build the new array in memory: the current array plus one new entry
+   `{"cycle": N, "phase": "<red|green|refactor>", "author": "<user|claude>",
+   "commit": "<sha>"}`.
+4. Fold that full new array into the same `pair-state.js write` call that
+   already advances `phase`/`whose_turn`/`cycle` for this step - don't add
+   an extra write() round-trip just for history.
+
 **Red phase** (`phase: "red"`):
 - If it's Claude's turn to write the test: write a small failing test,
-  run it once to confirm it fails, then continue to the next step.
+  then run the persisted `test_cmd` (from state, via `Bash`) once to
+  confirm it fails, then continue to the next step.
 - If it's the user's turn: attach `Monitor` to the background watcher.
   Wait - do not poll or nag - until the watcher output shows a new failing
   test. That is the signal the turn is done.
 - Once red is confirmed, commit: `git commit -m "test: cycle N red (author)"`
   where `author` is whoever just wrote it.
-- Call `pair-state.js write` with `{"phase": "green", "whose_turn": "<other
-  person>"}` - implementation duty passes to the partner in ping-pong TDD.
+- Follow the history read-modify-write pattern above, then call
+  `pair-state.js write` with `{"phase": "green", "whose_turn": "<other
+  person>", "history": [...]}` - implementation duty passes to the partner
+  in ping-pong TDD.
 - If it's now the user's turn, call `ScheduleWakeup` for the configured
   timer. If it fires before green is seen, post a single nudge ("still
   going? just checking in") and re-arm once; never force anything.
 
 **Green phase** (`phase: "green"`):
-- Same pattern as red: either Claude writes the minimal implementation, or
+- Same pattern as red: either Claude writes the minimal implementation and
+  runs the persisted `test_cmd` (via `Bash`) once to confirm it passes, or
   `Monitor` watches for the watcher to report the suite green.
 - Commit: `git commit -m "impl: cycle N green (author)"`.
-- Call `pair-state.js write` with `{"phase": "refactor"}`.
+- Follow the history read-modify-write pattern above, then call
+  `pair-state.js write` with `{"phase": "refactor", "history": [...]}`.
 
 **Refactor phase** (`phase: "refactor"`):
 - Either person may refactor, or skip it. Ask if unclear.
 - If changes were made and the watcher still reports green, commit:
   `git commit -m "refactor: cycle N (author)"`. If no changes were made,
-  skip the commit entirely.
-- Call `pair-state.js write` with `{"cycle": N+1, "phase": "red"}` and
-  append the cycle's entries to `history`.
+  skip the commit entirely (and skip the history update below too - there
+  is no new commit to record).
+- Follow the history read-modify-write pattern above, then call
+  `pair-state.js write` with `{"cycle": N+1, "phase": "red", "history":
+  [...]}`.
 - Move to the next cycle's assignment-confirmation step above.
 
 ## Consulting agents
@@ -115,6 +144,8 @@ new assignment out loud.
 
 ## `/pair stop`
 
-Run `pair-state.js stop <cwd>`, kill the background watcher process, and
-confirm the session has ended. This is the only in-conversation way out -
-do not treat any other phrase as ending the session.
+Read state to get the persisted `watch_task_id` (captured in `/pair start`
+step 3), then call `TaskStop` with that task ID to actually terminate the
+background watcher. Then run `pair-state.js stop <cwd>` and confirm the
+session has ended. This is the only in-conversation way out - do not treat
+any other phrase as ending the session.
