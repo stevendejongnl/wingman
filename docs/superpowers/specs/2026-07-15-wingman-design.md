@@ -96,7 +96,7 @@ state, not shared history):
 
 - Claude attaches `Monitor` to the background watcher process started in
   step 2.
-- A red→green transition, or a new failing test appearing, in the watcher
+- A red-to-green transition, or a new failing test appearing, in the watcher
   output is the signal that the human's turn is complete — no typed keyword
   required.
 - When it's Claude's own turn, Claude writes the test/impl directly and then
@@ -135,12 +135,12 @@ state, not shared history):
 
 1. State: `phase: red`, `whose_turn: X`. X writes a failing test in their own
    editor (or Claude writes it, if X is Claude).
-2. Watcher reports the new test failing → confirms red. Commit `test: cycle N
+2. Watcher reports the new test failing, confirming red. Commit `test: cycle N
    red (X)`.
 3. State flips to `phase: green`, `whose_turn` flips to the other person —
    in ping-pong TDD, whoever wrote the failing test hands implementation
    duty to their partner.
-4. Watcher reports green → commit `impl: cycle N green (other)`.
+4. Watcher reports green, then commit `impl: cycle N green (other)`.
 5. Either person may refactor. If changes are made and tests stay green,
    commit `refactor: cycle N (whoever changed it)`.
 6. Cycle increments. Claude proposes the next test-writer (the person who
