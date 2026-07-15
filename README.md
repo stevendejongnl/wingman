@@ -4,6 +4,8 @@ A Claude Code plugin that turns a session into a real TDD pairing partner:
 strict red/green/refactor discipline, roles alternating ping-pong style every
 cycle, and a sticky session that stays active until you explicitly end it.
 
+![wingman pairing session: Claude on the left, vim and a passing test run on the right](docs/screenshot.png)
+
 ## What it does
 
 - Roles swap every cycle: whoever wrote a cycle's test hands the
