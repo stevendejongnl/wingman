@@ -1,0 +1,30 @@
+{
+  "name": "wingman",
+  "description": "TDD ping-pong pairing partner — sticky pair-programming sessions with red/green/refactor discipline.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/src/hooks/session-start.js\"",
+            "timeout": 5,
+            "statusMessage": "Checking wingman pair session..."
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/src/hooks/prompt-submit.js\"",
+            "timeout": 5,
+            "statusMessage": "Tracking wingman pair session..."
+          }
+        ]
+      }
+    ]
+  }
+}
